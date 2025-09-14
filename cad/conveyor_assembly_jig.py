@@ -26,13 +26,21 @@ class Spec:
     # MARK: Body specs.
     total_z: float = 5.0
 
+    arm_width_on_long_side: float = 5.0
+    arm_width_along_short_gap: float = 4.0
+    arm_gap_width: float = 6.0
+
     def __post_init__(self) -> None:
         """Post initialization checks."""
 
     @property
     def total_x(self) -> float:
         """Total X dimension."""
-        return (self.cell_count_x * self.cell_pitch_x) + (2 * 5.0)
+        return (
+            (self.cell_count_x * self.cell_pitch_x)
+            + (2 * 5.0)
+            + (2 * self.arm_width_on_long_side + 2 * self.arm_gap_width)
+        )
 
     @property
     def total_y(self) -> float:
@@ -71,6 +79,24 @@ def conveyor_assembly_jig(spec: Spec) -> bd.Part | bd.Compound:
                 spec.magnet_h,
                 align=bde.align.ANCHOR_TOP,
             ).translate((dot_x, dot_y, spec.total_z))
+
+    # Remove the arm gaps.
+    for x_sign in (1, -1):
+        p -= bd.Pos(
+            X=(
+                x_sign
+                * (
+                    spec.total_x / 2
+                    - spec.arm_width_on_long_side
+                    - spec.arm_gap_width / 2
+                )
+            )
+        ) * bd.Box(
+            spec.arm_gap_width,
+            spec.total_y - 2 * spec.arm_width_along_short_gap,
+            spec.total_z,
+            align=bde.align.ANCHOR_BOTTOM,
+        )
 
     return p
 
