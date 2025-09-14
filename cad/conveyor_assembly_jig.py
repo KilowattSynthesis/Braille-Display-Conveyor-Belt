@@ -13,7 +13,7 @@ class Spec:
     """Specification for conveyor_assembly_jig."""
 
     magnet_d: float = 2.1
-    magnet_h: float = 1.2
+    magnet_h: float = 0.6
 
     # MARK: Braille specs.
     dot_pitch_x: float = 2.5
@@ -24,7 +24,7 @@ class Spec:
     cell_count_y: int = 2
 
     # MARK: Body specs.
-    total_z: float = 5.0
+    total_z: float = 3.0
 
     arm_width_on_long_side: float = 5.0
     arm_width_along_short_gap: float = 4.0
