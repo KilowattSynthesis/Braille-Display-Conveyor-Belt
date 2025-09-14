@@ -7,28 +7,27 @@ from loguru import logger
 
 
 @dataclass
-class Part1Spec:
-    """Specification for part1."""
+class Spec:
+    """Specification for conveyor_assembly_jig."""
 
-    part1_radius: float = 20
+    conveyor_assembly_jig_radius: float = 20
 
     def __post_init__(self) -> None:
         """Post initialization checks."""
-        assert self.part1_radius > 0, "part1_radius must be positive"
 
 
-def make_part1(spec: Part1Spec) -> bd.Part | bd.Compound:
-    """Create a CAD model of part1."""
+def make_conveyor_assembly_jig(spec: Spec) -> bd.Part | bd.Compound:
+    """Create a CAD model of conveyor_assembly_jig."""
     p = bd.Part(None)
 
-    p += bd.Cylinder(radius=spec.part1_radius, height=20)
+    p += bd.Cylinder(radius=spec.conveyor_assembly_jig_radius, height=20)
 
     return p
 
 
 if __name__ == "__main__":
     parts = {
-        "part1": show(make_part1(Part1Spec())),
+        "conveyor_assembly_jig": show(make_conveyor_assembly_jig(Spec())),
     }
 
     logger.info("Showing CAD model(s)")
