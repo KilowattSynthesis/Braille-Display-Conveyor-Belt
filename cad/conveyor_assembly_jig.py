@@ -108,15 +108,16 @@ if __name__ == "__main__":
 
     logger.info("Showing CAD model(s)")
 
-    (export_folder := Path(__file__).parent.with_name("build")).mkdir(
-        exist_ok=True
+    export_folder = (
+        Path(__file__).parent.parent / "build" / (Path(__file__).stem)
     )
+    export_folder.mkdir(exist_ok=True, parents=True)
     for name, part in parts.items():
         assert isinstance(part, bd.Part | bd.Solid | bd.Compound), (
             f"{name} is not an expected type ({type(part)})"
         )
         if not part.is_manifold:
-            logger.warning(f"Part '{name}' is not manifold")
+            logger.warning(f'Part "{name}" is not manifold')
 
         bd.export_stl(part, str(export_folder / f"{name}.stl"))
         bd.export_step(part, str(export_folder / f"{name}.step"))
