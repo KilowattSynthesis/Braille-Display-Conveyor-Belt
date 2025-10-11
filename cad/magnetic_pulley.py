@@ -111,7 +111,13 @@ def magnetic_pulley(spec: Spec) -> bd.Part | bd.Compound:
 
 if __name__ == "__main__":
     parts = {
-        "magnetic_pulley": show(magnetic_pulley(Spec())),
+        # "magnetic_pulley": show(magnetic_pulley(Spec())),
+        "magnetic_pulley_3_cells": show(
+            magnetic_pulley(Spec(cell_count_around_circumference=3))
+        ),
+        "magnetic_pulley_4_cells": show(
+            magnetic_pulley(Spec(cell_count_around_circumference=4))
+        ),
     }
 
     logger.info("Showing CAD model(s)")
