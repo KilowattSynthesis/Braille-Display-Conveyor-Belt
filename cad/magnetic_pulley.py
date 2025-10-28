@@ -14,7 +14,7 @@ from loguru import logger
 class Spec:
     """Specification for magnetic_pulley."""
 
-    magnet_d: float = 2.1
+    magnet_d: float = 2.0
     magnet_h: float = 0.6
 
     # MARK: Braille specs.
@@ -78,10 +78,14 @@ def magnetic_pulley(spec: Spec) -> bd.Part | bd.Compound:
             ) + (spec.circumference_mm_to_angle(dot_pos_around_circumference))
 
             p -= (
-                bd.Cylinder(
-                    spec.magnet_d / 2,
+                bd.extrude(
+                    bd.RegularPolygon(
+                        radius=spec.magnet_d / 2 - 0.1,
+                        side_count=6,
+                        major_radius=False,  # Across the flats.
+                    ),
                     5,  # Must extend out far!
-                    align=bde.align.ANCHOR_BOTTOM,
+                    dir=(0, 0, 1),
                 )
                 .rotate(axis=bd.Axis.Y, angle=90)  # Point in +X.
                 .translate((spec.pulley_body_od / 2 - spec.magnet_h, 0, dot_z))
