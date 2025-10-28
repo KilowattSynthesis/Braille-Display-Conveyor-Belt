@@ -16,8 +16,8 @@ from loguru import logger
 class Spec:
     """Specification for magnetic_pulley."""
 
-    magnet_d: float = 2.0
-    magnet_h: float = 0.6
+    magnet_d: float = 2.0  # Real: 2.0mm
+    magnet_h: float = 0.9  # Real: 0.5mm
 
     # MARK: Braille specs.
     dot_pitch_x: float = 2.5
@@ -84,7 +84,7 @@ def magnetic_pulley(spec: Spec) -> bd.Part | bd.Compound:
             p -= (
                 bd.extrude(
                     bd.RegularPolygon(
-                        radius=spec.magnet_d / 2 - 0.1,
+                        radius=spec.magnet_d / 2,
                         side_count=6,
                         major_radius=False,  # Across the flats.
                     ),
@@ -128,9 +128,12 @@ if __name__ == "__main__":
         "magnetic_pulley_4_cells": show(
             magnetic_pulley(Spec(cell_count_around_circumference=4))
         ),
-        "assembly_pulley": show(
+        "assembly_pulley_20_cells": show(
             magnetic_pulley(
                 Spec(
+                    # Make count even so it repeats.
+                    # A 33-cell wrap wraps a 100mm PCB on both sides.
+                    # 20-cell rows (40-cell tape) is a common size/form factor.
                     cell_count_around_circumference=20,
                     flange_sides=("bottom",),
                 )
