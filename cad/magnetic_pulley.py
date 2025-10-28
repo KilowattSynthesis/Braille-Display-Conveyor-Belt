@@ -1,8 +1,10 @@
 import itertools
 import json
 import math
+from collections.abc import Sequence
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Literal
 
 import build123d as bd
 import build123d_ease as bde
@@ -30,6 +32,8 @@ class Spec:
     flange_lip_height: float = 1.2
 
     center_hole_d: float = 2.0
+
+    flange_sides: Sequence[Literal["top", "bottom"]] = ("top", "bottom")
 
     def __post_init__(self) -> None:
         """Post initialization checks."""
@@ -93,10 +97,12 @@ def magnetic_pulley(spec: Spec) -> bd.Part | bd.Compound:
             )
 
     # Add the flanges.
-    for align, z_sign in (
-        (bde.align.ANCHOR_BOTTOM, 1),
-        (bde.align.ANCHOR_TOP, -1),
+    for align, z_sign, is_flange_enabled in (
+        (bde.align.ANCHOR_BOTTOM, 1, "top" in spec.flange_sides),
+        (bde.align.ANCHOR_TOP, -1, "bottom" in spec.flange_sides),
     ):
+        if not is_flange_enabled:
+            continue
         p += bd.Pos(Z=z_sign * spec.pulley_body_length / 2) * bd.Cylinder(
             radius=(spec.pulley_body_od / 2 + spec.flange_lip_height),
             height=spec.flange_lip_height,
@@ -121,6 +127,14 @@ if __name__ == "__main__":
         ),
         "magnetic_pulley_4_cells": show(
             magnetic_pulley(Spec(cell_count_around_circumference=4))
+        ),
+        "assembly_pulley": show(
+            magnetic_pulley(
+                Spec(
+                    cell_count_around_circumference=20,
+                    flange_sides=("bottom",),
+                )
+            )
         ),
     }
 
