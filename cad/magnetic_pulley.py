@@ -16,8 +16,11 @@ from loguru import logger
 class Spec:
     """Specification for magnetic_pulley."""
 
-    magnet_d: float = 2.0  # Real: 2.0mm
+    magnet_d: float = 2.05  # Real: 2.0mm
     magnet_h: float = 0.9  # Real: 0.5mm
+
+    magnet_insertion_cone_extra_radius: float = 0.45
+    magnet_insertion_cone_height: float = 0.6
 
     # MARK: Braille specs.
     dot_pitch_x: float = 2.5
@@ -58,6 +61,21 @@ class Spec:
         return (mm / self.pulley_body_circumference) * 360.0
 
 
+def truncated_hex_cone(
+    bottom_radius: float, top_radius: float, height: float, side_count: int = 6
+) -> bd.Part:
+    """Create a truncated hexagonal cone part."""
+    with bd.BuildPart() as truncated_hex_cone:
+        with bd.BuildSketch(bd.Plane.XY) as base:
+            bd.RegularPolygon(bottom_radius, side_count)
+        with bd.BuildSketch(bd.Plane.XY.offset(height)) as top:
+            bd.RegularPolygon(top_radius, side_count)
+        bd.loft([base.sketch, top.sketch])
+
+    assert truncated_hex_cone.part is not None  # Type checking.
+    return truncated_hex_cone.part
+
+
 # MARK: magnetic_pulley
 def magnetic_pulley(spec: Spec) -> bd.Part | bd.Compound:
     """Create a CAD model of magnetic_pulley.
@@ -71,6 +89,24 @@ def magnetic_pulley(spec: Spec) -> bd.Part | bd.Compound:
         height=spec.pulley_body_length,
     )
 
+    # Memoize the magnet cutout part.
+    magnet_cutout_part = bd.extrude(
+        bd.RegularPolygon(
+            radius=spec.magnet_d / 2,
+            side_count=6,
+            major_radius=False,  # Across the flats.
+        ),
+        5,  # Must extend out far!
+        dir=(0, 0, 1),
+    ) + truncated_hex_cone(
+        bottom_radius=spec.magnet_d / 2,
+        top_radius=(
+            spec.magnet_d / 2 + spec.magnet_insertion_cone_extra_radius
+        ),
+        height=spec.magnet_insertion_cone_height,
+        # align=bde.align.ANCHOR_BOTTOM,  # Needed for a bd.Cone.
+    ).translate((0, 0, spec.magnet_h - spec.magnet_insertion_cone_height))
+
     # Remove the grid of magnets (around pulley body circumference).
     for cell_idx in range(spec.cell_count_around_circumference):
         for dot_pos_around_circumference, dot_z in itertools.product(
@@ -82,15 +118,8 @@ def magnetic_pulley(spec: Spec) -> bd.Part | bd.Compound:
             ) + (spec.circumference_mm_to_angle(dot_pos_around_circumference))
 
             p -= (
-                bd.extrude(
-                    bd.RegularPolygon(
-                        radius=spec.magnet_d / 2,
-                        side_count=6,
-                        major_radius=False,  # Across the flats.
-                    ),
-                    5,  # Must extend out far!
-                    dir=(0, 0, 1),
-                )
+                magnet_cutout_part
+                # Transform/point the main repeated part.
                 .rotate(axis=bd.Axis.Y, angle=90)  # Point in +X.
                 .translate((spec.pulley_body_od / 2 - spec.magnet_h, 0, dot_z))
                 .rotate(axis=bd.Axis.Z, angle=dot_angle_pos)
@@ -120,6 +149,7 @@ def magnetic_pulley(spec: Spec) -> bd.Part | bd.Compound:
 
 
 if __name__ == "__main__":
+    logger.info("Rendering and exporting CAD model(s)")
     parts = {
         # "magnetic_pulley": show(magnetic_pulley(Spec())),
         "magnetic_pulley_3_cells": show(
@@ -136,18 +166,20 @@ if __name__ == "__main__":
                     # 20-cell rows (40-cell tape) is a common size/form factor.
                     cell_count_around_circumference=20,
                     flange_sides=("bottom",),
+                    magnet_h=1.6,  # Plan to use 2mm x 1mm magnets.
                 )
             )
         ),
     }
 
-    logger.info("Showing CAD model(s)")
+    logger.info("Exporting CAD model(s)")
 
     export_folder = (
         Path(__file__).parent.parent / "build" / (Path(__file__).stem)
     )
     export_folder.mkdir(exist_ok=True, parents=True)
     for name, part in parts.items():
+        logger.info(f'Exporting part "{name}"')
         assert isinstance(part, bd.Part | bd.Solid | bd.Compound), (
             f"{name} is not an expected type ({type(part)})"
         )
